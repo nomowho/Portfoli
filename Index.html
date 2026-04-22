@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="投資組合">
+<meta name="theme-color" content="#0c0f1a">
+<title>投資組合 HQ</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230c0f1a'/%3E%3Ctext x='90' y='115' font-size='90' text-anchor='middle' fill='%23c8b8ff'%3E◈%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0c0f1a;color:#f0eeff;font-family:'DM Mono','Courier New',monospace;-webkit-tap-highlight-color:transparent}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:#0c0f1a}::-webkit-scrollbar-thumb{background:#242840;border-radius:3px}
+#app{min-height:100%;padding-bottom:env(safe-area-inset-bottom)}
+.header{border-bottom:1px solid #1e2236;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;background:#0c0f1aee;backdrop-filter:blur(10px);z-index:50}
+.header-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#f0eeff;letter-spacing:-0.02em}
+.header-sub{font-size:10px;color:#7a78a0;margin-top:2px;letter-spacing:.08em}
+.header-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.price-bar{background:#0f1220;border-bottom:1px solid #1e2236;padding:8px 16px;display:flex;align-items:center;gap:8px;font-size:11px;min-height:34px}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block}
+.dot-spin{background:#ffcc55;animation:spin-pulse 1s infinite}
+.dot-ok{background:#3ddd88}
+.dot-warn{background:#ffcc55}
+.dot-err{background:#ff6060}
+.dot-idle{background:#3a3860}
+@keyframes spin-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.pbar-text{color:#b0aec8;flex:1}
+.pbar-time{color:#7a78a0;font-size:10px;white-space:nowrap}
+.rbtn{background:#1a1e30;border:1px solid #242840;border-radius:8px;color:#c8b8ff;padding:7px 11px;cursor:pointer;font-family:inherit;font-size:11px;white-space:nowrap}
+.rbtn:active{background:#242840}
+.rbtn:disabled{opacity:.5;cursor:not-allowed}
+.trade-btn{background:#3ddd88;border:none;cursor:pointer;padding:8px 14px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;color:#041408;white-space:nowrap}
+.trade-btn:active{opacity:.8}
+.card{background:#141824;border:1px solid #242840;border-radius:14px}
+.summary-grid{padding:14px 16px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.summary-card{background:#141824;border:1px solid #242840;border-radius:12px;padding:13px 15px;position:relative;overflow:hidden}
+.summary-card.full{grid-column:1/-1}
+.sc-label{font-size:11px;color:#b0aec8;letter-spacing:.06em;margin-bottom:6px}
+.sc-value{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;line-height:1.1}
+.sc-sub{font-size:12px;color:#b0aec8;margin-top:5px}
+.sc-bar{position:absolute;top:0;right:0;width:3px;height:100%;opacity:.3;border-radius:0 12px 12px 0}
+.tabs{padding:10px 16px 0;display:flex;gap:3px}
+.tab{background:none;border:none;cursor:pointer;padding:8px 13px;border-radius:7px;font-family:inherit;font-size:12px;color:#7a78a0}
+.tab.on{background:#242840;color:#c8b8ff}
+.tab-line{height:1px;background:#1e2236;margin:0 16px}
+.content{padding:14px 16px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.rank-card{background:#141824;border:1px solid #242840;border-radius:14px;padding:14px}
+.rank-title{font-size:10px;letter-spacing:.1em;font-weight:500;margin-bottom:12px}
+.rank-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:6px}
+.rank-left{display:flex;align-items:center;gap:5px;min-width:0;flex-wrap:wrap}
+.rank-name{font-size:11px;color:#f0eeff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:75px}
+.rank-right{text-align:right;flex-shrink:0}
+.rank-pnl{font-size:12px;font-weight:500}.rank-pct{font-size:10px;opacity:.8}.rank-num{font-size:10px;color:#7a78a0}
+.badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.04em;white-space:nowrap}
+.badge-tw{background:rgba(255,204,85,.15);color:#ffcc55}
+.badge-us{background:rgba(110,198,255,.15);color:#6ec6ff}
+.pct-badge{padding:2px 7px;border-radius:5px;font-size:11px;font-weight:500}
+.pct-pos{background:rgba(61,221,136,.12);color:#3ddd88}
+.pct-neg{background:rgba(255,96,96,.12);color:#ff6060}
+.pos{color:#3ddd88}.neg{color:#ff6060}
+.asset-bar-wrap{background:#141824;border:1px solid #242840;border-radius:14px;padding:14px 16px}
+.asset-bar{display:flex;height:18px;border-radius:5px;overflow:hidden;gap:1px;margin-bottom:8px}
+.asset-legend{display:flex;gap:14px;font-size:11px;color:#b0aec8;align-items:center}
+.legend-dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.filter-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.search-input{background:#1a1e30;border:1px solid #242840;border-radius:8px;color:#f0eeff;padding:8px 12px;font-family:inherit;font-size:13px;outline:none;flex:1;min-width:120px}
+.search-input::placeholder{color:#7a78a0}
+.fbtn{background:none;border:1px solid #242840;cursor:pointer;padding:6px 11px;border-radius:20px;font-family:inherit;font-size:11px;color:#7a78a0}
+.fbtn.f-all{background:#242840;color:#c8b8ff;border-color:#8878cc}
+.fbtn.f-tw{background:rgba(255,204,85,.15);color:#ffcc55;border-color:rgba(255,204,85,.4)}
+.fbtn.f-us{background:rgba(110,198,255,.15);color:#6ec6ff;border-color:rgba(110,198,255,.4)}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{padding:8px 8px;color:#b0aec8;font-size:10px;letter-spacing:.05em;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none}
+th.left{text-align:left}th.right{text-align:right}
+tbody tr{border-bottom:1px solid #1a1e2e}
+tbody tr:active td{background:rgba(255,255,255,.04)}
+td{padding:8px 8px;white-space:nowrap}
+tfoot tr{border-top:2px solid #242840}
+tfoot td{padding:10px 8px}
+.td-name{color:#f0eeff}.td-num{text-align:right;color:#b0aec8}
+.td-muted{text-align:right;color:#7a78a0;font-size:11px}
+.td-pnl{text-align:right;font-weight:500}.td-pct{text-align:right}
+@keyframes flash{0%{background:rgba(61,221,136,.15)}100%{background:transparent}}
+.price-ok{animation:flash .8s ease}
+.price-dim{color:#3a3860 !important}
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:130px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bar-val{font-size:9px;text-align:center;line-height:1.2}
+.bar-inner{width:100%;display:flex;align-items:flex-end;justify-content:center;height:80px}
+.bar-fill{width:68%;border-radius:4px 4px 0 0}
+.bar-date{font-size:9px;color:#7a78a0;text-align:center}
+.hist-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:8px;margin-top:12px}
+.hist-card{background:#141824;border:1px solid #242840;border-radius:10px;padding:11px}
+.hist-date{font-size:11px;color:#b0aec8;margin-bottom:4px}
+.hist-val{font-family:'Syne',sans-serif;font-size:16px;font-weight:700}
+.hist-delta{font-size:11px;margin-top:4px}
+.hist-pct{font-size:11px;color:#b0aec8;margin-top:2px}
+.hist-note{font-size:10px;color:#7a78a0;text-align:center;margin-top:8px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:#141824;border:1px solid #242840;border-radius:20px 20px 0 0;padding:20px 18px;padding-bottom:calc(20px + env(safe-area-inset-bottom));width:100%;max-height:92vh;overflow-y:auto}
+.modal-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#f0eeff}
+.modal-close{background:none;border:none;cursor:pointer;color:#7a78a0;font-size:22px;line-height:1}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.toggle-row{display:flex;gap:8px;margin-bottom:16px}
+.toggle-btn{flex:1;padding:10px;border-radius:8px;border:1.5px solid transparent;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600}
+.field-label{font-size:12px;color:#b0aec8;margin-bottom:5px;display:block}
+.field-input{background:#1a1e30;border:1px solid #242840;border-radius:8px;color:#f0eeff;padding:10px 13px;font-family:inherit;font-size:14px;outline:none;width:100%}
+.field-input:focus{border-color:#8878cc}
+.field-input::placeholder{color:#7a78a0}
+.two-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.autocomplete{position:absolute;top:100%;left:0;right:0;background:#1e2236;border:1px solid #242840;border-radius:8px;z-index:10;overflow:hidden;margin-top:2px;max-height:180px;overflow-y:auto}
+.ac-row{padding:10px 12px;cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid #1a1e2e}
+.ac-row:last-child{border-bottom:none}
+.ac-row:active{background:#242840}
+.ac-name{font-size:13px;color:#f0eeff;flex:1}
+.ac-meta{font-size:11px;color:#7a78a0}
+.preview-box{background:#1a1e30;border:1px solid #242840;border-radius:10px;padding:13px;margin-bottom:14px}
+.preview-label{font-size:11px;color:#b0aec8;margin-bottom:8px}
+.preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pil{font-size:10px;color:#7a78a0}
+.piv{font-size:13px;color:#f0eeff;margin-top:2px}
+.preview-after{margin-top:10px;padding-top:10px;border-top:1px solid #1e2236;display:flex;justify-content:space-between;align-items:center}
+.error-box{background:rgba(255,96,96,.12);border:1px solid rgba(255,96,96,.4);border-radius:8px;padding:10px 13px;margin-bottom:12px;color:#ff6060;font-size:13px}
+.confirm-btn{width:100%;padding:13px;border-radius:10px;border:none;cursor:pointer;font-family:inherit;font-size:15px;font-weight:700}
+.toast{position:fixed;bottom:calc(28px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:#1e2236;border-radius:10px;padding:11px 20px;font-size:13px;font-weight:500;z-index:300;white-space:nowrap;animation:fadeUp .25s ease;box-shadow:0 4px 24px rgba(0,0,0,.6);max-width:90vw;text-overflow:ellipsis;overflow:hidden}
+@keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.count-label{font-size:11px;color:#7a78a0;margin-left:auto}
+.source-tag{font-size:9px;background:#1a1e30;color:#7a78a0;padding:1px 5px;border-radius:3px;margin-left:4px}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+</head>
+<body><div id="app"></div>
+<script type="text/babel">
+const{useState,useEffect,useCallback,useRef}=React;
+
+// ─── Seed Data ────────────────────────────────────────────────────────────────
+const SEED_TW=[
+{name:“元大台灣50”,ticker:“0050.TW”,shares:3000,avgPrice:68.69,currentPrice:84.55,market:“TW”},
+{name:“國泰永續高股息”,ticker:“00878.TW”,shares:8000,avgPrice:17.21,currentPrice:24.51,market:“TW”},
+{name:“國泰台灣科技龍頭”,ticker:“00881.TW”,shares:24000,avgPrice:14.98,currentPrice:42.96,market:“TW”},
+{name:“群益台灣精選高息”,ticker:“00919.TW”,shares:2000,avgPrice:21.34,currentPrice:23.67,market:“TW”},
+{name:“復華台灣科技優息”,ticker:“00929.TW”,shares:1000,avgPrice:17.42,currentPrice:21.78,market:“TW”},
+{name:“元大航太防衛科技”,ticker:“00941.TW”,shares:40000,avgPrice:15.00,currentPrice:25.87,market:“TW”},
+{name:“中信NASDAQ”,ticker:“00669.TW”,shares:11000,avgPrice:9.02,currentPrice:11.58,market:“TW”},
+{name:“台泥”,ticker:“1101.TW”,shares:2644,avgPrice:28.65,currentPrice:24.80,market:“TW”},
+{name:“大成”,ticker:“1210.TW”,shares:3181,avgPrice:47.17,currentPrice:55.00,market:“TW”},
+{name:“台化”,ticker:“1326.TW”,shares:4000,avgPrice:69.46,currentPrice:50.50,market:“TW”},
+{name:“鴻海”,ticker:“2317.TW”,shares:3300,avgPrice:113.77,currentPrice:207.50,market:“TW”},
+{name:“台積電”,ticker:“2330.TW”,shares:245,avgPrice:1826.03,currentPrice:2025.00,market:“TW”},
+{name:“彰銀”,ticker:“2801.TW”,shares:1121,avgPrice:15.81,currentPrice:21.60,market:“TW”},
+{name:“國泰金”,ticker:“2882.TW”,shares:1000,avgPrice:41.24,currentPrice:74.60,market:“TW”},
+{name:“台新新光金”,ticker:“2887.TW”,shares:3570,avgPrice:12.54,currentPrice:24.25,market:“TW”},
+{name:“泓德能源”,ticker:“6592.TW”,shares:1000,avgPrice:96.08,currentPrice:90.00,market:“TW”},
+{name:“國泰A級科技債”,ticker:“00952B.TW”,shares:1000,avgPrice:32.33,currentPrice:28.92,market:“TW”},
+{name:“大華美國MAG7+”,ticker:“00971.TW”,shares:2000,avgPrice:9.85,currentPrice:10.27,market:“TW”},
+{name:“錦明”,ticker:“9958.TW”,shares:1000,avgPrice:57.55,currentPrice:42.80,market:“TW”},
+{name:“富邦科技”,ticker:“0052.TW”,shares:1000,avgPrice:41.00,currentPrice:49.20,market:“TW”},
+{name:“富邦台50”,ticker:“006208.TW”,shares:1000,avgPrice:110.00,currentPrice:196.00,market:“TW”},
+{name:“元大美債20年”,ticker:“00679B.TW”,shares:5000,avgPrice:25.00,currentPrice:27.04,market:“TW”},
+{name:“富邦越南”,ticker:“00885.TW”,shares:2000,avgPrice:11.80,currentPrice:18.59,market:“TW”},
+{name:“主動野村台灣50”,ticker:“00522.TW”,shares:21000,avgPrice:13.30,currentPrice:18.80,market:“TW”},
+{name:“台塑”,ticker:“1301.TW”,shares:1000,avgPrice:82.00,currentPrice:52.60,market:“TW”},
+{name:“中鋼”,ticker:“2002.TW”,shares:1133,avgPrice:9.93,currentPrice:19.85,market:“TW”},
+{name:“聯電”,ticker:“2303.TW”,shares:1000,avgPrice:38.45,currentPrice:76.90,market:“TW”},
+{name:“所羅門”,ticker:“2359.TW”,shares:1000,avgPrice:128.00,currentPrice:116.50,market:“TW”},
+{name:“緯創”,ticker:“3231.TW”,shares:1000,avgPrice:110.80,currentPrice:140.50,market:“TW”},
+{name:“東洋”,ticker:“4105.TW”,shares:3000,avgPrice:58.60,currentPrice:73.80,market:“TW”},
+{name:“太醫”,ticker:“4126.TW”,shares:3099,avgPrice:21.00,currentPrice:80.20,market:“TW”},
+{name:“曜亞”,ticker:“4138.TW”,shares:3993,avgPrice:32.55,currentPrice:65.10,market:“TW”},
+{name:“中租-KY”,ticker:“5871.TW”,shares:2160,avgPrice:133.50,currentPrice:120.00,market:“TW”},
+{name:“力積電”,ticker:“6770.TW”,shares:73,avgPrice:25.70,currentPrice:51.40,market:“TW”},
+];
+const SEED_US=[
+{name:“AMD”,ticker:“AMD”,shares:119.917,avgPrice:174.67,currentPrice:274.01,market:“US”},
+{name:“Amazon (AMZN)”,ticker:“AMZN”,shares:12,avgPrice:184.009,currentPrice:246.86,market:“US”},
+{name:“BOTZ”,ticker:“BOTZ”,shares:30,avgPrice:33.484,currentPrice:37.3951,market:“US”},
+{name:“Fiserv (FI)”,ticker:“FI”,shares:50,avgPrice:61.511,currentPrice:64.76,market:“US”},
+{name:“Grab (GRAB)”,ticker:“GRAB”,shares:850,avgPrice:3.816,currentPrice:4.225,market:“US”},
+{name:“Hims (HIMS)”,ticker:“HIMS”,shares:136,avgPrice:33.18,currentPrice:30.735,market:“US”},
+{name:“Meta (META)”,ticker:“META”,shares:9,avgPrice:628.518,currentPrice:673.20,market:“US”},
+{name:“Microsoft (MSFT)”,ticker:“MSFT”,shares:2,avgPrice:425.025,currentPrice:419.07,market:“US”},
+{name:“NVIDIA (NVDA)”,ticker:“NVDA”,shares:49.144,avgPrice:166.87,currentPrice:199.2003,market:“US”},
+{name:“QQQ”,ticker:“QQQ”,shares:4,avgPrice:441.888,currentPrice:645.26,market:“US”},
+{name:“SoFi (SOFI)”,ticker:“SOFI”,shares:132.381,avgPrice:19.09,currentPrice:19.39,market:“US”},
+{name:“Vital Farms (VITL)”,ticker:“VITL”,shares:117,avgPrice:30.149,currentPrice:12.77,market:“US”},
+{name:“VOO”,ticker:“VOO”,shares:14.474,avgPrice:422.85,currentPrice:650.74,market:“US”},
+{name:“Alphabet (GOOG)”,ticker:“GOOG”,shares:5.343,avgPrice:187.17,currentPrice:336.80,market:“US”},
+{name:“TLT”,ticker:“TLT”,shares:4.124,avgPrice:93.73,currentPrice:86.95,market:“US”},
+{name:“Fortinet (FTNT)”,ticker:“FTNT”,shares:14,avgPrice:82.583,currentPrice:82.56,market:“US”},
+{name:“MercadoLibre (MELI)”,ticker:“MELI”,shares:2,avgPrice:1781.78,currentPrice:1851.98,market:“US”},
+{name:“UnitedHealth (UNH)”,ticker:“UNH”,shares:5,avgPrice:253.254,currentPrice:324.10,market:“US”},
+];
+
+// ─── Storage ──────────────────────────────────────────────────────────────────
+const STORE_KEY=“pfhq-v3”;
+function load(){try{const r=localStorage.getItem(STORE_KEY);return r?JSON.parse(r):null;}catch{return null;}}
+function save(tw,us){try{localStorage.setItem(STORE_KEY,JSON.stringify({tw,us}));}catch{}}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const fmt=(n,d=0)=>n>=0?`+${n.toLocaleString("zh-TW",{minimumFractionDigits:d,maximumFractionDigits:d})}`:n.toLocaleString(“zh-TW”,{minimumFractionDigits:d,maximumFractionDigits:d});
+function calcPnl(s){const cost=s.avgPrice*s.shares,asset=s.currentPrice*s.shares,pnl=asset-cost;return{cost,asset,pnl,pct:cost>0?(pnl/cost)*100:0};}
+function genHistory(total){const today=new Date();let v=total;const arr=[v];for(let i=1;i<10;i++){v-=(Math.random()-.48)*Math.abs(total)*.015;arr.unshift(v);}return arr.map((pnl,i)=>{const d=new Date(today);d.setDate(today.getDate()-(9-i));return{date:d.toLocaleDateString(“zh-TW”,{month:“numeric”,day:“numeric”}),pnl};});}
+
+// ─── Live Price Engine ────────────────────────────────────────────────────────
+// Strategy: try multiple data sources in sequence, use first that works
+// Each fetcher returns { prices: {symbol: price}, source: string } or throws
+
+// Source 1: Yahoo Finance via allorigins CORS proxy
+async function fetchViaAllOrigins(symbols) {
+const yahooUrl = `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(",")}&fields=regularMarketPrice`;
+const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`;
+const res = await fetch(proxyUrl, {signal: AbortSignal.timeout(8000)});
+if (!res.ok) throw new Error(`allorigins ${res.status}`);
+const data = await res.json();
+const results = data?.quoteResponse?.result;
+if (!results?.length) throw new Error(“no results”);
+const prices = {};
+results.forEach(r => { if (r.regularMarketPrice > 0) prices[r.symbol] = r.regularMarketPrice; });
+if (!Object.keys(prices).length) throw new Error(“empty prices”);
+return { prices, source: “Yahoo/allorigins” };
+}
+
+// Source 2: Yahoo Finance via corsproxy.io
+async function fetchViaCorsproxy(symbols) {
+const yahooUrl = `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbols.join(",")}&fields=regularMarketPrice`;
+const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
+const res = await fetch(proxyUrl, {signal: AbortSignal.timeout(8000)});
+if (!res.ok) throw new Error(`corsproxy ${res.status}`);
+const data = await res.json();
+const results = data?.quoteResponse?.result;
+if (!results?.length) throw new Error(“no results”);
+const prices = {};
+results.forEach(r => { if (r.regularMarketPrice > 0) prices[r.symbol] = r.regularMarketPrice; });
+if (!Object.keys(prices).length) throw new Error(“empty prices”);
+return { prices, source: “Yahoo/corsproxy” };
+}
+
+// Source 3: Yahoo Finance chart API (one by one, slower but most reliable)
+async function fetchViaYahooChart(symbols) {
+const prices = {};
+const CHUNK = 5; // batch in groups to be polite
+for (let i = 0; i < symbols.length; i += CHUNK) {
+const chunk = symbols.slice(i, i + CHUNK);
+await Promise.all(chunk.map(async sym => {
+try {
+const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=1d`;
+const res = await fetch(url, {
+signal: AbortSignal.timeout(6000),
+headers: {“User-Agent”: “Mozilla/5.0”}
+});
+if (!res.ok) return;
+const data = await res.json();
+const p = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+if (p > 0) prices[sym] = p;
+} catch {}
+}));
+}
+if (!Object.keys(prices).length) throw new Error(“chart API empty”);
+return { prices, source: “Yahoo/chart” };
+}
+
+// Source 4: Stooq (no CORS, CSV format, works globally)
+// Maps our tickers to Stooq format
+function toStooq(ticker) {
+// TW: 2330.TW -> 2330.tw, 0050.TW -> 0050.tw
+// US: NVDA -> nvda.us
+if (ticker.endsWith(”.TW”)) return ticker.replace(”.TW”,”.tw”);
+if (ticker.endsWith(”.tw”)) return ticker;
+return ticker.toLowerCase() + “.us”;
+}
+async function fetchOneStooq(sym) {
+const sq = toStooq(sym);
+const url = `https://stooq.com/q/l/?s=${sq}&f=l1`; // l1 = last price
+const res = await fetch(url, {signal: AbortSignal.timeout(5000)});
+if (!res.ok) throw new Error(`stooq ${res.status}`);
+const text = await res.text();
+const price = parseFloat(text.trim());
+if (isNaN(price) || price <= 0) throw new Error(`stooq bad price: ${text}`);
+return price;
+}
+async function fetchViaStooq(symbols) {
+const prices = {};
+await Promise.all(symbols.map(async sym => {
+try { prices[sym] = await fetchOneStooq(sym); } catch {}
+}));
+if (!Object.keys(prices).length) throw new Error(“stooq empty”);
+return { prices, source: “Stooq” };
+}
+
+// USD/TWD rate from multiple sources
+async function fetchUsdRate() {
+// Try open.er-api.com first
+try {
+const res = await fetch(“https://open.er-api.com/v6/latest/USD”, {signal: AbortSignal.timeout(5000)});
+const d = await res.json();
+if (d.rates?.TWD > 0) return d.rates.TWD;
+} catch {}
+// Try exchangerate-api
+try {
+const res = await fetch(“https://api.exchangerate-api.com/v4/latest/USD”, {signal: AbortSignal.timeout(5000)});
+const d = await res.json();
+if (d.rates?.TWD > 0) return d.rates.TWD;
+} catch {}
+// Try Yahoo TWD=X
+try {
+const res = await fetch(“https://query1.finance.yahoo.com/v8/finance/chart/TWD%3DX?interval=1d&range=1d”, {signal: AbortSignal.timeout(5000)});
+const d = await res.json();
+const p = d?.chart?.result?.[0]?.meta?.regularMarketPrice;
+if (p > 0) return p;
+} catch {}
+return null;
+}
+
+// Master fetcher: tries sources in order
+async function fetchAllPrices(symbols, onProgress) {
+const sources = [
+{name:“allorigins”, fn: ()=>fetchViaAllOrigins(symbols)},
+{name:“corsproxy”,  fn: ()=>fetchViaCorsproxy(symbols)},
+{name:“Yahoo chart”,fn: ()=>fetchViaYahooChart(symbols)},
+{name:“Stooq”,      fn: ()=>fetchViaStooq(symbols)},
+];
+for (const src of sources) {
+try {
+onProgress && onProgress(`嘗試 ${src.name}…`);
+const result = await src.fn();
+return result;
+} catch(e) {
+console.log(`${src.name} failed:`, e.message);
+}
+}
+throw new Error(“all sources failed”);
+}
+
+// ─── Trade Modal ──────────────────────────────────────────────────────────────
+function TradeModal({stocks,onConfirm,onClose}){
+const[mode,setMode]=useState(“buy”);
+const[market,setMarket]=useState(“TW”);
+const[nameInput,setNameInput]=useState(””);
+const[ticker,setTicker]=useState(””);
+const[price,setPrice]=useState(””);
+const[qty,setQty]=useState(””);
+const[curPrice,setCurPrice]=useState(””);
+const[error,setError]=useState(””);
+const[sugg,setSugg]=useState([]);
+const[matched,setMatched]=useState(null);
+useEffect(()=>{
+if(!nameInput.trim()){setSugg([]);setMatched(null);return;}
+const q=nameInput.toLowerCase();
+const hits=stocks.filter(s=>s.market===market&&(s.name.toLowerCase().includes(q)||(s.ticker||””).replace(”.TW”,””).toLowerCase().includes(q))).slice(0,5);
+setSugg(hits);
+const exact=stocks.find(s=>s.market===market&&(s.name.toLowerCase()===q||(s.ticker||””).replace(”.TW”,””).toLowerCase()===q));
+setMatched(exact||null);
+},[nameInput,market,stocks]);
+const pick=s=>{setNameInput(s.name);setTicker((s.ticker||””).replace(”.TW”,””));setCurPrice(s.currentPrice.toString());setMatched(s);setSugg([]);};
+let preview=null;
+if(matched&&price&&qty){const p=parseFloat(price),q=parseFloat(qty);if(!isNaN(p)&&!isNaN(q)&&p>0&&q>0){if(mode===“buy”){const ns=matched.shares+q;preview={label:“加倉後均價”,value:((matched.avgPrice*matched.shares+p*q)/ns).toFixed(3)};}else{preview={label:“減倉後持股”,value:`${(matched.shares-q).toLocaleString()} 股`};}}}
+const confirm=()=>{
+if(!nameInput.trim())return setError(“請輸入股票名稱或代號”);
+const p=parseFloat(price),q=parseFloat(qty);
+if(isNaN(p)||p<=0)return setError(“請輸入有效的成交價格”);
+if(isNaN(q)||q<=0)return setError(“請輸入有效的數量”);
+if(mode===“sell”&&matched&&q>matched.shares)return setError(`減倉數量不得超過現有 ${matched.shares.toLocaleString()} 股`);
+setError(””);onConfirm({mode,market,name:nameInput.trim(),ticker:ticker.trim(),price:p,qty:q,currentPrice:parseFloat(curPrice)||p,isNew:!matched});onClose();
+};
+return(
+<div className=“overlay” onClick={e=>e.target===e.currentTarget&&onClose()}>
+<div className="modal">
+<div className="modal-header"><span className="modal-title">交易記錄</span><button className="modal-close" onClick={onClose}>✕</button></div>
+<div className="toggle-row">
+{[[“buy”,“＋ 加倉”],[“sell”,”－ 減倉”]].map(([v,l])=>(<button key={v} className=“toggle-btn” onClick={()=>setMode(v)} style={{background:mode===v?(v===“buy”?“rgba(61,221,136,.12)”:“rgba(255,96,96,.12)”):”#1a1e30”,color:mode===v?(v===“buy”?”#3ddd88”:”#ff6060”):”#7a78a0”,borderColor:mode===v?(v===“buy”?”#3ddd88”:”#ff6060”):“transparent”}}>{l}</button>))}
+</div>
+<div className="toggle-row">
+{[[“TW”,“🇹🇼 台股”],[“US”,“🇺🇸 美股”]].map(([v,l])=>(<button key={v} className=“toggle-btn” onClick={()=>{setMarket(v);setNameInput(””);setTicker(””);setMatched(null);setSugg([]);}} style={{background:market===v?(v===“TW”?“rgba(255,204,85,.15)”:“rgba(110,198,255,.15)”):”#1a1e30”,color:market===v?(v===“TW”?”#ffcc55”:”#6ec6ff”):”#7a78a0”,borderColor:market===v?(v===“TW”?“rgba(255,204,85,.5)”:“rgba(110,198,255,.5)”):“transparent”,fontSize:13}}>{l}</button>))}
+</div>
+<div style={{marginBottom:14,position:“relative”}}>
+<label className="field-label">股票名稱 / 代號</label>
+<input className=“field-input” placeholder={market===“TW”?“e.g. 台積電 / 2330”:“e.g. NVDA / VOO”} value={nameInput} onChange={e=>setNameInput(e.target.value)}/>
+{sugg.length>0&&(<div className="autocomplete">{sugg.map((s,i)=>(<div key={i} className=“ac-row” onClick={()=>pick(s)}><span className={`badge badge-${s.market.toLowerCase()}`}>{s.market}</span><span className="ac-name">{s.name}</span><span className="ac-meta">{(s.ticker||””).replace(”.TW”,””)}</span><span className="ac-meta">{s.shares.toLocaleString()}股</span></div>))}</div>)}
+</div>
+<div style={{marginBottom:14}}><label className="field-label">股票代號（選填）</label><input className=“field-input” placeholder={market===“TW”?“e.g. 2330”:“e.g. NVDA”} value={ticker} onChange={e=>setTicker(e.target.value)}/></div>
+<div className="two-fields" style={{marginBottom:14}}>
+<div><label className="field-label">{mode===“buy”?“買入”:“賣出”}價格({market===“TW”?“NT$”:“USD”})</label><input className=“field-input” type=“number” inputMode=“decimal” placeholder=“0.00” value={price} onChange={e=>setPrice(e.target.value)}/></div>
+<div><label className="field-label">數量（股）</label><input className=“field-input” type=“number” inputMode=“decimal” placeholder=“0” value={qty} onChange={e=>setQty(e.target.value)}/></div>
+</div>
+{!matched&&nameInput&&(<div style={{marginBottom:14}}><label className="field-label">目前市價</label><input className=“field-input” type=“number” inputMode=“decimal” placeholder=“不知可先填成交價” value={curPrice} onChange={e=>setCurPrice(e.target.value)}/></div>)}
+{matched&&(<div className="preview-box" style={{marginBottom:14}}><div className="preview-label">現有持倉</div><div className="preview-grid">{[[“持股數”,matched.shares%1!==0?matched.shares.toFixed(3):matched.shares.toLocaleString()],[“均價”,matched.market===“TW”?matched.avgPrice.toFixed(2):`$${matched.avgPrice.toFixed(3)}`],[“現價”,matched.market===“TW”?matched.currentPrice.toFixed(2):`$${matched.currentPrice.toFixed(3)}`]].map(([l,v])=>(<div key={l}><div className="pil">{l}</div><div className="piv">{v}</div></div>))}</div>{preview&&(<div className="preview-after"><span style={{fontSize:12,color:”#b0aec8”}}>{preview.label}</span><span style={{fontSize:13,color:”#c8b8ff”,fontWeight:600}}>{preview.value}</span></div>)}</div>)}
+{error&&<div className="error-box">{error}</div>}
+<button className=“confirm-btn” onClick={confirm} style={{background:mode===“buy”?”#3ddd88”:”#ff6060”,color:mode===“buy”?”#041408”:”#1a0505”}}>確認 {mode===“buy”?“加倉”:“減倉”}</button>
+</div>
+</div>
+);
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
+function App(){
+const saved=load();
+const[twStocks,setTw]=useState(saved?.tw||SEED_TW);
+const[usStocks,setUs]=useState(saved?.us||SEED_US);
+const[usdRate,setRate]=useState(32.5);
+const[tab,setTab]=useState(“overview”);
+const[search,setSearch]=useState(””);
+const[mktFilter,setMktFilter]=useState(“ALL”);
+const[sortK,setSortK]=useState(“pnlTWD”);
+const[sortD,setSortD]=useState(-1);
+const[showModal,setShowModal]=useState(false);
+const[toast,setToast]=useState(null);
+const[status,setStatus]=useState(“idle”); // idle|loading|ok|warn|err
+const[statusMsg,setStatusMsg]=useState(“點「更新報價」取得即時股價”);
+const[priceTime,setPriceTime]=useState(null);
+const[dataSource,setDataSource]=useState(””);
+const[priceKey,setPriceKey]=useState(0); // bump to trigger flash animation
+
+useEffect(()=>{save(twStocks,usStocks);},[twStocks,usStocks]);
+const showToast=(msg,color=”#3ddd88”)=>{setToast({msg,color});setTimeout(()=>setToast(null),3500);};
+
+const refreshPrices=useCallback(async()=>{
+if(status===“loading”)return;
+setStatus(“loading”);
+setStatusMsg(“連接中…”);
+
+```
+// Fetch USD/TWD concurrently
+fetchUsdRate().then(r=>{ if(r&&r>0) setRate(parseFloat(r.toFixed(2))); });
+
+// Build all symbols
+const twTickers=twStocks.map(s=>s.ticker).filter(Boolean);
+const usTickers=usStocks.map(s=>s.ticker).filter(Boolean);
+const allSymbols=[...twTickers,...usTickers];
+
+try {
+  const {prices, source}=await fetchAllPrices(allSymbols, msg=>setStatusMsg(msg));
+  let updated=0, failed=0;
+
+  setTw(prev=>prev.map(s=>{
+    const p=prices[s.ticker];
+    if(p&&p>0){updated++;return{...s,currentPrice:p};}
+    failed++;return s;
+  }));
+  setUs(prev=>prev.map(s=>{
+    const p=prices[s.ticker];
+    if(p&&p>0){updated++;return{...s,currentPrice:p};}
+    failed++;return s;
+  }));
+
+  setPriceTime(new Date());
+  setDataSource(source);
+  setPriceKey(k=>k+1);
+
+  if(failed===0){
+    setStatus("ok");
+    setStatusMsg(`已更新全部 ${updated} 檔`);
+    showToast(`✓ ${updated} 檔即時股價更新完成（${source}）`);
+  } else {
+    setStatus("warn");
+    setStatusMsg(`已更新 ${updated} 檔，${failed} 檔未取得`);
+    showToast(`⚠ 已更新 ${updated} 檔，${failed} 檔無資料`,"#ffcc55");
+  }
+} catch(e) {
+  setStatus("err");
+  setStatusMsg("無法取得報價，請檢查網路");
+  showToast("✕ 所有報價來源均失敗，請確認網路連線","#ff6060");
+}
+```
+
+},[twStocks,usStocks,status]);
+
+// Auto-run on first open
+useEffect(()=>{ refreshPrices(); },[]);
+
+const handleTrade=useCallback((t)=>{
+const{mode,market,name,ticker,price,qty,currentPrice}=t;
+const yTicker=market===“TW”?(ticker?`${ticker}.TW`:””):ticker;
+const setter=market===“TW”?setTw:setUs;
+setter(prev=>{
+const idx=prev.findIndex(s=>s.name===name||(ticker&&s.ticker&&s.ticker.replace(”.TW”,””)===ticker));
+if(mode===“buy”){
+if(idx>=0){const s=prev[idx],ns=s.shares+qty;const u=[…prev];u[idx]={…s,shares:ns,avgPrice:(s.avgPrice*s.shares+price*qty)/ns,currentPrice:currentPrice||s.currentPrice};showToast(`✓ 加倉 ${name} ${qty.toLocaleString()} 股`);return u;}
+showToast(`✓ 新增 ${name} ${qty.toLocaleString()} 股`);return[…prev,{name,ticker:yTicker,shares:qty,avgPrice:price,currentPrice:currentPrice||price,market}];
+}else{
+if(idx<0)return prev;const s=prev[idx],rem=s.shares-qty;
+if(rem<=0){showToast(`✓ 清倉 ${name}`,”#ff6060”);return prev.filter((_,i)=>i!==idx);}
+const u=[…prev];u[idx]={…s,shares:rem};showToast(`✓ 減倉 ${name} ${qty.toLocaleString()} 股`,”#ff6060”);return u;
+}
+});
+},[]);
+
+const all=[
+…twStocks.map(s=>{const{cost,asset,pnl,pct}=calcPnl(s);return{…s,pnlTWD:pnl,assetTWD:asset,costTWD:cost,pnlPct:pct,dispShares:s.shares%1!==0?s.shares.toFixed(2):s.shares.toLocaleString(),dispAvg:s.avgPrice.toFixed(2),dispCurrent:s.currentPrice.toFixed(2)};}),
+…usStocks.map(s=>{const{cost,asset,pnl,pct}=calcPnl(s);return{…s,pnlTWD:pnl*usdRate,assetTWD:asset*usdRate,costTWD:cost*usdRate,pnlPct:pct,dispShares:s.shares%1!==0?s.shares.toFixed(3):s.shares.toLocaleString(),dispAvg:`$${s.avgPrice.toFixed(3)}`,dispCurrent:`$${s.currentPrice.toFixed(3)}`};}),
+];
+const totalPnl=all.reduce((a,s)=>a+s.pnlTWD,0);
+const totalAsset=all.reduce((a,s)=>a+s.assetTWD,0);
+const totalCost=all.reduce((a,s)=>a+s.costTWD,0);
+const totalPct=totalCost>0?(totalPnl/totalCost)*100:0;
+const twPnl=twStocks.reduce((a,s)=>a+calcPnl(s).pnl,0);
+const usPnl=usStocks.reduce((a,s)=>a+calcPnl(s).pnl*usdRate,0);
+const history=genHistory(totalPnl);
+const maxAbs=Math.max(…history.map(h=>Math.abs(h.pnl)));
+let display=all.filter(s=>(mktFilter===“ALL”||s.market===mktFilter)&&(!search||s.name.toLowerCase().includes(search.toLowerCase())||(s.ticker||””).replace(”.TW”,””).toLowerCase().includes(search.toLowerCase())));
+display.sort((a,b)=>sortD*((a[sortK]||0)-(b[sortK]||0)));
+const doSort=k=>{if(sortK===k)setSortD(d=>-d);else{setSortK(k);setSortD(-1);}};
+const winners=[…all].sort((a,b)=>b.pnlTWD-a.pnlTWD).slice(0,5);
+const losers=[…all].sort((a,b)=>a.pnlTWD-b.pnlTWD).slice(0,5);
+
+const dotClass=status===“loading”?“dot-spin”:status===“ok”?“dot-ok”:status===“warn”?“dot-warn”:status===“err”?“dot-err”:“dot-idle”;
+
+return(
+<div id="app-inner">
+{toast&&<div className=“toast” style={{borderColor:`${toast.color}50`,color:toast.color}}>{toast.msg}</div>}
+{showModal&&<TradeModal stocks={[…twStocks,…usStocks]} onConfirm={handleTrade} onClose={()=>setShowModal(false)}/>}
+
+```
+  <div className="header">
+    <div><div className="header-title">◈ PORTFOLIO HQ</div><div className="header-sub">台股 + 美股 · 即時報價</div></div>
+    <div className="header-right">
+      <div style={{fontSize:11,color:"#b0aec8"}}>USD/TWD <span style={{color:"#c8b8ff"}}>{usdRate.toFixed(2)}</span></div>
+      <button className="rbtn" onClick={refreshPrices} disabled={status==="loading"}>{status==="loading"?"⟳ 更新中…":"⟳ 更新報價"}</button>
+      <button className="trade-btn" onClick={()=>setShowModal(true)}>＋ 加倉</button>
+    </div>
+  </div>
+
+  <div className="price-bar">
+    <span className={`dot ${dotClass}`}/>&nbsp;
+    <span className="pbar-text">{statusMsg}{dataSource&&status==="ok"?<span className="source-tag">{dataSource}</span>:null}</span>
+    {priceTime&&<span className="pbar-time">{priceTime.toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</span>}
+  </div>
+
+  <div className="summary-grid">
+    <div className="summary-card"><div className="sc-label">總市值</div><div className="sc-value" style={{color:"#f0eeff"}}>NT$ {(totalAsset/1e6).toFixed(2)}M</div><div className="sc-bar" style={{background:"#c8b8ff"}}/></div>
+    <div className="summary-card"><div className="sc-label">總損益</div><div className="sc-value" style={{color:totalPnl>=0?"#3ddd88":"#ff6060"}}>{fmt(Math.round(totalPnl))}</div><div className="sc-sub">{fmt(totalPct,2)}%</div><div className="sc-bar" style={{background:totalPnl>=0?"#3ddd88":"#ff6060"}}/></div>
+    <div className="summary-card"><div className="sc-label">台股損益</div><div className="sc-value" style={{color:twPnl>=0?"#3ddd88":"#ff6060"}}>{fmt(Math.round(twPnl))}</div><div className="sc-sub">NT$</div><div className="sc-bar" style={{background:twPnl>=0?"#3ddd88":"#ff6060"}}/></div>
+    <div className="summary-card"><div className="sc-label">美股損益(折台幣)</div><div className="sc-value" style={{color:usPnl>=0?"#3ddd88":"#ff6060"}}>{fmt(Math.round(usPnl))}</div><div className="sc-sub">@{usdRate.toFixed(1)}</div><div className="sc-bar" style={{background:usPnl>=0?"#3ddd88":"#ff6060"}}/></div>
+    <div className="summary-card full"><div className="sc-label">持倉</div><div className="sc-value" style={{color:"#c8b8ff"}}>{all.length} 檔</div><div className="sc-sub">台 {twStocks.length} ／ 美 {usStocks.length}</div><div className="sc-bar" style={{background:"#c8b8ff"}}/></div>
+  </div>
+
+  <div className="tabs">{[["overview","概覽"],["stocks","持股明細"],["history","近10日"]].map(([id,l])=>(<button key={id} className={`tab ${tab===id?"on":""}`} onClick={()=>setTab(id)}>{l}</button>))}</div>
+  <div className="tab-line"/>
+  <div className="content">
+
+    {tab==="overview"&&(<>
+      <div className="two-col">
+        <div className="rank-card"><div className="rank-title" style={{color:"#3ddd88"}}>▲ TOP 5 獲利</div>{winners.map((s,i)=>(<div key={i} className="rank-row"><div className="rank-left"><span className="rank-num">{i+1}</span><span className={`badge badge-${s.market.toLowerCase()}`}>{s.market}</span><span className="rank-name">{s.name}</span></div><div className="rank-right"><div className="rank-pnl pos">+{Math.round(Math.abs(s.pnlTWD)).toLocaleString()}</div><div className="rank-pct pos">+{Math.abs(s.pnlPct).toFixed(1)}%</div></div></div>))}</div>
+        <div className="rank-card"><div className="rank-title" style={{color:"#ff6060"}}>▼ TOP 5 虧損</div>{losers.map((s,i)=>(<div key={i} className="rank-row"><div className="rank-left"><span className="rank-num">{i+1}</span><span className={`badge badge-${s.market.toLowerCase()}`}>{s.market}</span><span className="rank-name">{s.name}</span></div><div className="rank-right"><div className="rank-pnl neg">{fmt(Math.round(s.pnlTWD))}</div><div className="rank-pct neg">{fmt(s.pnlPct,1)}%</div></div></div>))}</div>
+      </div>
+      <div className="asset-bar-wrap"><div className="sc-label" style={{marginBottom:10}}>資產分布</div><div className="asset-bar">{[...all].sort((a,b)=>b.assetTWD-a.assetTWD).slice(0,28).map((s,i)=>{const p=(s.assetTWD/totalAsset)*100;return p>0.3?<div key={i} title={`${s.name}: ${p.toFixed(1)}%`} style={{width:`${p}%`,background:s.market==="TW"?`hsl(42,65%,${30+(i%6)*5}%)`:`hsl(210,65%,${30+(i%6)*5}%)`}}/>:null;})}</div><div className="asset-legend"><span><span className="legend-dot" style={{background:"hsl(42,65%,42%)"}}/>台股</span><span><span className="legend-dot" style={{background:"hsl(210,65%,42%)"}}/>美股</span><span style={{marginLeft:"auto"}}>NT$ {(totalAsset/1e4).toFixed(0)} 萬</span></div></div>
+    </>)}
+
+    {tab==="stocks"&&(<>
+      <div className="filter-row">
+        <input className="search-input" placeholder="搜尋名稱或代號…" value={search} onChange={e=>setSearch(e.target.value)}/>
+        {[["ALL","全部"],["TW","台股"],["US","美股"]].map(([v,l])=>(<button key={v} className={`fbtn ${mktFilter===v?`f-${v.toLowerCase()}`:""}`} onClick={()=>setMktFilter(v)}>{l}</button>))}
+        <span className="count-label">{display.length} 檔</span>
+      </div>
+      <div className="table-wrap">
+        <table>
+          <thead><tr>
+            <th className="left">名稱</th>
+            <th className="right">股數</th>
+            <th className="right">均價</th>
+            <th className="right" style={{color:status==="loading"?"#ffcc55":"#b0aec8"}}>現價{status==="loading"?"⟳":""}</th>
+            <th className="right" onClick={()=>doSort("assetTWD")}>市值{sortK==="assetTWD"?(sortD>0?"↑":"↓"):""}</th>
+            <th className="right" onClick={()=>doSort("pnlTWD")}>損益{sortK==="pnlTWD"?(sortD>0?"↑":"↓"):""}</th>
+            <th className="right" onClick={()=>doSort("pnlPct")}>損益%{sortK==="pnlPct"?(sortD>0?"↑":"↓"):""}</th>
+          </tr></thead>
+          <tbody>
+            {display.map((s,i)=>(
+              <tr key={i}>
+                <td><span className={`badge badge-${s.market.toLowerCase()}`}>{s.market}</span><span className="td-name" style={{marginLeft:5}}>{s.name}</span></td>
+                <td className="td-num">{s.dispShares}</td>
+                <td className="td-muted">{s.dispAvg}</td>
+                <td className={`td-num ${status==="loading"?"price-dim":""}`} key={`${s.ticker}-${priceKey}`}
+                  style={status==="ok"?{animation:"flash .8s ease"}:{}}>{s.dispCurrent}</td>
+                <td className="td-num">{Math.round(s.assetTWD).toLocaleString()}</td>
+                <td className="td-pnl" style={{color:s.pnlTWD>=0?"#3ddd88":"#ff6060"}}>{fmt(Math.round(s.pnlTWD))}</td>
+                <td className="td-pct"><span className={`pct-badge ${s.pnlPct>=0?"pct-pos":"pct-neg"}`}>{fmt(s.pnlPct,2)}%</span></td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot><tr>
+            <td colSpan={4} style={{fontFamily:"Syne,sans-serif",fontWeight:700,color:"#c8b8ff",fontSize:13}}>合計</td>
+            <td className="td-num" style={{fontWeight:600}}>{Math.round(totalAsset).toLocaleString()}</td>
+            <td className="td-pnl" style={{fontWeight:700,color:totalPnl>=0?"#3ddd88":"#ff6060",fontSize:13}}>{fmt(Math.round(totalPnl))}</td>
+            <td className="td-pct"><span className={`pct-badge ${totalPct>=0?"pct-pos":"pct-neg"}`}>{fmt(totalPct,2)}%</span></td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </>)}
+
+    {tab==="history"&&(<>
+      <div className="card" style={{padding:14,marginBottom:12}}>
+        <div className="sc-label" style={{marginBottom:12}}>近10日損益趨勢（模擬估算）</div>
+        <div className="bar-chart">{history.map((h,i)=>{const p=Math.abs(h.pnl)/maxAbs,pos=h.pnl>=0;return(<div key={i} className="bar-col"><div className="bar-val" style={{color:pos?"#3ddd88":"#ff6060"}}>{(h.pnl/1e4).toFixed(0)}萬</div><div className="bar-inner"><div className="bar-fill" style={{height:`${Math.max(p*100,4)}%`,background:pos?"linear-gradient(180deg,#3ddd8890,#3ddd8840)":"linear-gradient(180deg,#ff606090,#ff606040)"}}/></div><div className="bar-date">{h.date}</div></div>);})}</div>
+      </div>
+      <div className="hist-cards">{history.map((h,i)=>{const prev=i>0?history[i-1].pnl:h.pnl,d=h.pnl-prev,pos=h.pnl>=0,dp=d>=0;return(<div key={i} className="hist-card"><div className="hist-date">{h.date}</div><div className="hist-val" style={{color:pos?"#3ddd88":"#ff6060"}}>{(h.pnl/1e4).toFixed(1)}萬</div>{i>0&&<div className="hist-delta" style={{color:dp?"#3ddd88":"#ff6060"}}>{dp?"▲":"▼"} {Math.abs(d/1e4).toFixed(1)}萬</div>}<div className="hist-pct">{((h.pnl/totalCost)*100).toFixed(2)}%</div></div>);})}</div>
+      <div className="hist-note">※ 近10日為模擬估算值，實際請依券商帳戶為準</div>
+    </>)}
+  </div>
+</div>
+```
+
+);
+}
+ReactDOM.createRoot(document.getElementById(“app”)).render(<App/>);
+</script>
+
+</body>
+</html>
